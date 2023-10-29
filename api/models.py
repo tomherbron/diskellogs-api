@@ -18,9 +18,8 @@ class User(db.Model, UserMixin):
     city = db.Column(db.String(50))
     records = db.relationship('Record', secondary=user_record, backref='users')
 
-    def __init__(self, user_id, email, password, first_name,
+    def __init__(self, email, password, first_name,
                  last_name, address, zip_code, city):
-        self.user_id = user_id
         self.email = email
         self.password = password
         self.last_name = first_name
@@ -33,7 +32,6 @@ class User(db.Model, UserMixin):
         return {
             'user_id': self.user_id,
             'email': self.email,
-            'password': self.password,
             'last_name': self.first_name,
             'first_name': self.last_name,
             'address': self.address,
@@ -41,6 +39,21 @@ class User(db.Model, UserMixin):
             'city': self.city,
             'records': [record.json() for record in self.records]
         }
+
+    @property
+    def is_active(self):
+        return super().is_active
+
+    @property
+    def is_authenticated(self):
+        return super().is_authenticated
+
+    @property
+    def is_anonymous(self):
+        return super().is_anonymous
+
+    def get_id(self):
+        return self.user_id
 
 
 class Record(db.Model):
@@ -52,8 +65,7 @@ class Record(db.Model):
     price = db.Column(db.Float)
     release_year = db.Column(db.Date())
 
-    def __init__(self, record_id, ref, title, artist, genre, price, release_year):
-        self.record_id = record_id
+    def __init__(self, ref, title, artist, genre, price, release_year):
         self.ref = ref
         self.title = title
         self.artist = artist
@@ -71,3 +83,4 @@ class Record(db.Model):
             'price': self.price,
             'release_year': self.release_year,
         }
+
