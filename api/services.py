@@ -1,13 +1,28 @@
-from flask import jsonify, Response
+from flask import jsonify, Response, session
 from flask_login import login_user
 from sqlalchemy.exc import SQLAlchemyError
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from api import db
 from api.models import User, Record
 
 
 class ApiServices:
+
+    @classmethod
+    def login_user(cls, email: str, password: str) -> Exception | Response:
+
+        user = User.query.filter_by(email=email).first()
+
+        if user:
+            if check_password_hash(user.password, password):
+                login_user(user, remember=True)
+                session['user_id'] = user.user_id
+                return user.json()
+            else:
+                return jsonify('error', 'Wrong password')
+        else:
+            return jsonify('error', 'User does not exists.')
 
     @classmethod
     def create_user(cls, user_data: dict) -> Exception | Response:
@@ -44,6 +59,12 @@ class ApiServices:
     @classmethod
     def delete_user(cls, user_id: int) -> str | Exception:
         pass
+
+    @classmethod
+    def get_user(cls, user_id: int) -> Response | Exception:
+        user = User.query.filter_by(user_id=user_id)
+        return user.json()
+
 
     @classmethod
     def add_record(cls, record_data: dict) -> Record | Exception:

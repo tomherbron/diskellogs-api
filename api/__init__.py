@@ -11,6 +11,7 @@ DB_NAME = 'diskellogs.db'
 def create_app():
     app = Flask(__name__)
     CORS(app)
+    app.config['CORS_HEADERS'] = 'Content-Type'
     app.config['SECRET_KEY'] = 'tom_secret_key'
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'
     db.init_app(app)

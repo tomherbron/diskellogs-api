@@ -1,4 +1,5 @@
 from flask import Blueprint, Response, jsonify, session
+from flask_cors import cross_origin
 from flask_login import login_user
 from marshmallow import fields, validate
 from webargs.flaskparser import use_args
@@ -13,8 +14,10 @@ auth = Blueprint('auth', __name__)
     'email': fields.Email(required=True),
     'password': fields.Str(required=True, validate=validate.Length(min=8)),
 })
-def login():
-    pass
+def login(credentials: dict):
+    email = credentials['email']
+    password = credentials['password']
+    return ApiServices.login_user(email, password)
 
 
 def logout():
