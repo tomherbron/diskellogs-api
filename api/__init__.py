@@ -2,7 +2,7 @@ from functools import wraps
 from os import path
 
 import jwt
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 
@@ -35,7 +35,7 @@ def create_database():
         print('Database created!')
 
 
-def register_endpoints(app):
+def register_endpoints(application):
     from .views import views
     from .auth import auth
 
@@ -46,12 +46,15 @@ def register_endpoints(app):
 def token_required(func):
     @wraps(func)
     def decorated(*args, **kwargs):
-        token = request.args.get('token')
+        token = request.headers.get('Authorization')
         if not token:
             return jsonify('error', 'Token is missing.'), 403
 
         try:
-            payload = jwt.decode(token, app.config['SECRET_KEY'])
+            payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
         except JWTException:
             return jsonify('error', 'Invalid token')
+
+        return func(*args, **kwargs)
+
     return decorated

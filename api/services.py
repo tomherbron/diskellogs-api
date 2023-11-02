@@ -11,23 +11,17 @@ class ApiServices:
 
     @classmethod
     def login_user(cls, credentials: dict) -> Exception | Response:
-
         email = credentials['email']
         password = credentials['password']
-
         user = User.query.filter_by(email=email).first()
 
         if not user:
-
             response_object = {
-                'status': 'fail',
+                'status': 'error',
                 'message': 'Unable to verify.'
             }
-
             return make_response(jsonify(response_object))
-
         else:
-
             if check_password_hash(user.password, password):
                 session['logged_in'] = True
 
@@ -41,12 +35,10 @@ class ApiServices:
                     'message': 'Successfully logged in!',
                     'token': token
                 }
-
                 return make_response(jsonify(response_object))
 
     @classmethod
     def create_user(cls, user_data: dict) -> Response | User:
-
         email = user_data['email']
         password = user_data['password1']
         first_name = user_data['first_name']
@@ -55,7 +47,6 @@ class ApiServices:
         user = User.query.filter_by(email=email).first()
 
         if not user:
-
             if user_data['password1']:
                 if user_data['password1'] == user_data['password2']:
                     password = generate_password_hash(user_data['password1'],
@@ -64,33 +55,38 @@ class ApiServices:
             new_user = User(email, password, first_name, last_name, None, None, None)
 
             try:
-
                 db.session.add(new_user)
                 db.session.commit()
-
                 response_object = {
                     'status': 'success',
                     'message': 'Successfully registered.'
                 }
-
                 return make_response(jsonify(response_object))
 
-            except SQLAlchemyError as e:
+            except SQLAlchemyError:
                 db.session.rollback()
-
                 responseObject = {
-                    'status': 'fail',
+                    'status': 'error',
                     'message': 'Some error occurred. Please try again.'
                 }
-
                 return make_response(jsonify(responseObject))
         else:
-
             response_object = {
-                'status': 'fail',
+                'status': 'error',
                 'message': 'User already exists. Please log in.',
             }
+            return make_response(jsonify(response_object))
 
+    @classmethod
+    def get_user(cls, user_id: int) -> Response | Exception:
+        user = User.query.filter_by(user_id=user_id).first()
+        if user:
+            return user.json()
+        else:
+            response_object = {
+                'status': 'error',
+                'message': 'Unable to retrieve user.',
+            }
             return make_response(jsonify(response_object))
 
     @classmethod
@@ -98,13 +94,8 @@ class ApiServices:
         pass
 
     @classmethod
-    def delete_user(cls, user_id: int) -> str | Exception:
+    def delete_user(cls, user_id: int) -> Response | Exception:
         pass
-
-    @classmethod
-    def get_user(cls, user_id: int) -> Response | Exception:
-        user = User.query.filter_by(user_id=user_id)
-        return user.json()
 
     @classmethod
     def add_record(cls, record_data: dict) -> Record | Exception:
@@ -115,5 +106,5 @@ class ApiServices:
         pass
 
     @classmethod
-    def delete_record(cls, record_id: int) -> str | Exception:
+    def delete_record(cls, record_id: int) -> Response | Exception:
         pass

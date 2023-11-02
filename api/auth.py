@@ -14,7 +14,7 @@ auth = Blueprint('auth', __name__)
     'email': fields.Email(required=True),
     'password': fields.Str(required=True, validate=validate.Length(min=8)),
 })
-def login(credentials: dict):
+def login(credentials: dict) -> Response:
     return ApiServices.login_user(credentials)
 
 
