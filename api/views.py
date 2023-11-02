@@ -1,12 +1,12 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, jsonify
 
-from api.services import ApiServices
+from api import token_required
 
 views = Blueprint('views', __name__)
 
 
 @views.route('/home', methods=['GET', 'POST'])
-def get_user():
-    if request.method == 'GET':
-        user_id = session['user_id']
-        return jsonify(ApiServices.get_user(user_id))
+@token_required
+def home():
+    return jsonify('Ok!!!')
+

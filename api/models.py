@@ -1,6 +1,6 @@
 from flask_login import UserMixin
-from api import db
 
+from api import db
 
 user_record = db.Table('user_record',
                        db.Column('user_id', db.Integer, db.ForeignKey('user.user_id')),
@@ -39,18 +39,6 @@ class User(db.Model, UserMixin):
             'city': self.city,
             'records': [record.json() for record in self.records]
         }
-
-    @property
-    def is_active(self):
-        return super().is_active
-
-    @property
-    def is_authenticated(self):
-        return super().is_authenticated
-
-    @property
-    def is_anonymous(self):
-        return super().is_anonymous
 
     def get_id(self):
         return self.user_id

@@ -1,4 +1,4 @@
-from flask import Blueprint, Response, jsonify, session
+from flask import Blueprint, Response, jsonify, session, make_response
 from flask_cors import cross_origin
 from flask_login import login_user
 from marshmallow import fields, validate
@@ -15,9 +15,7 @@ auth = Blueprint('auth', __name__)
     'password': fields.Str(required=True, validate=validate.Length(min=8)),
 })
 def login(credentials: dict):
-    email = credentials['email']
-    password = credentials['password']
-    return ApiServices.login_user(email, password)
+    return ApiServices.login_user(credentials)
 
 
 def logout():
@@ -33,6 +31,4 @@ def logout():
     'password2': fields.Str(required=True, validate=validate.Length(min=8)),
 })
 def register(user_data: dict) -> Response:
-    user = ApiServices.create_user(user_data)
-    login_user(user)
-    return jsonify('message', 'You have successfully logged in!')
+    return ApiServices.create_user(user_data)

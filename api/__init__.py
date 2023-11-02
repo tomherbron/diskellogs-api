@@ -1,15 +1,19 @@
-from flask import Flask
-from flask_cors import CORS
-from flask_login import LoginManager
-from flask_sqlalchemy import SQLAlchemy
+from functools import wraps
 from os import path
+
+import jwt
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
+
+from api.exceptions import JWTException
 
 db = SQLAlchemy()
 DB_NAME = 'diskellogs.db'
+app = Flask(__name__)
 
 
 def create_app():
-    app = Flask(__name__)
     CORS(app)
     app.config['CORS_HEADERS'] = 'Content-Type'
     app.config['SECRET_KEY'] = 'tom_secret_key'
@@ -21,14 +25,6 @@ def create_app():
     with app.app_context():
         from api.models import User, Record
         create_database()
-
-    login_manager = LoginManager()
-    login_manager.login_view = 'auth.login'
-    login_manager.init_app(app)
-
-    @login_manager.user_loader
-    def load_user(user_id):
-        return User.query.get(int(user_id))
 
     return app
 
@@ -45,3 +41,17 @@ def register_endpoints(app):
 
     app.register_blueprint(views, url_prefix='/')
     app.register_blueprint(auth, url_prefix='/')
+
+
+def token_required(func):
+    @wraps(func)
+    def decorated(*args, **kwargs):
+        token = request.args.get('token')
+        if not token:
+            return jsonify('error', 'Token is missing.'), 403
+
+        try:
+            payload = jwt.decode(token, app.config['SECRET_KEY'])
+        except JWTException:
+            return jsonify('error', 'Invalid token')
+    return decorated
