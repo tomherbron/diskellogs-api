@@ -28,7 +28,7 @@ class User(db.Model, UserMixin):
         self.zip_code = zip_code
         self.city = city
 
-    def json(self):
+    def json(self) -> dict:
         return {
             'user_id': self.user_id,
             'email': self.email,
@@ -39,9 +39,6 @@ class User(db.Model, UserMixin):
             'city': self.city,
             'records': [record.json() for record in self.records]
         }
-
-    def get_id(self):
-        return self.user_id
 
 
 class Record(db.Model):
@@ -61,7 +58,7 @@ class Record(db.Model):
         self.price = price
         self.release_year = release_year
 
-    def json(self):
+    def json(self) -> dict:
         return {
             'record_id': self.record_id,
             'ref': self.ref,

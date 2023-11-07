@@ -98,8 +98,34 @@ class ApiServices:
         pass
 
     @classmethod
-    def add_record(cls, record_data: dict) -> Record | Exception:
-        pass
+    def add_record(cls, record_data: dict, user_id: int) -> Response:
+        record = Record.query.filter_by(artist=record_data['artist'], title=record_data['title']).first()
+        if not record:
+            new_record = Record(record_data['ref'], record_data['title'], record_data['artist'], record_data['genre'],
+                                float(record_data['price']), record_data['release_year'])
+
+            user = User.query.filter_by(user_id=user_id).first()
+            if user:
+                try:
+                    user.records.append(new_record)
+                    db.session.add(new_record)
+                    db.session.commit()
+                    response_object = {
+                        'status': 'success',
+                        'message': 'Record added successfully.'
+                    }
+                except SQLAlchemyError as e:
+                    response_object = {
+                        'status': 'error',
+                        'message': 'Unable to retrieve user.',
+                    }
+                return make_response(jsonify(response_object))
+        else:
+            response_object = {
+                'status': 'error',
+                'message': 'Record already exists.',
+            }
+            return make_response(jsonify(response_object))
 
     @classmethod
     def update_record(cls, record_id: int, record_data: dict) -> Record | Exception:
