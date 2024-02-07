@@ -1,84 +1,13 @@
-from datetime import datetime, timedelta
-import jwt
-from flask import jsonify, Response, session, make_response
+from flask import jsonify, Response, make_response
 from sqlalchemy.exc import SQLAlchemyError
-from werkzeug.security import generate_password_hash, check_password_hash
-from api import db, app
+
+from api import db
 from api.models import User, Record
 
 
 class ApiServices:
-
     @classmethod
-    def login_user(cls, credentials: dict) -> Exception | Response:
-        email = credentials['email']
-        password = credentials['password']
-        user = User.query.filter_by(email=email).first()
-
-        if not user:
-            response_object = {
-                'status': 'error',
-                'message': 'Unable to verify.'
-            }
-            return make_response(jsonify(response_object))
-        else:
-            if check_password_hash(user.password, password):
-                session['logged_in'] = True
-
-                token = jwt.encode({
-                    'user_id': user.user_id,
-                    'expiration': str(datetime.utcnow() + timedelta(minutes=30)),
-                }, app.config['SECRET_KEY'])
-
-                response_object = {
-                    'status': 'success',
-                    'message': 'Successfully logged in!',
-                    'token': token
-                }
-                return make_response(jsonify(response_object))
-
-    @classmethod
-    def create_user(cls, user_data: dict) -> Response | User:
-        email = user_data['email']
-        password = user_data['password1']
-        first_name = user_data['first_name']
-        last_name = user_data['last_name']
-
-        user = User.query.filter_by(email=email).first()
-
-        if not user:
-            if user_data['password1']:
-                if user_data['password1'] == user_data['password2']:
-                    password = generate_password_hash(user_data['password1'],
-                                                      method='scrypt')
-
-            new_user = User(email, password, first_name, last_name, None, None, None)
-
-            try:
-                db.session.add(new_user)
-                db.session.commit()
-                response_object = {
-                    'status': 'success',
-                    'message': 'Successfully registered.'
-                }
-                return make_response(jsonify(response_object))
-
-            except SQLAlchemyError:
-                db.session.rollback()
-                responseObject = {
-                    'status': 'error',
-                    'message': 'Some error occurred. Please try again.'
-                }
-                return make_response(jsonify(responseObject))
-        else:
-            response_object = {
-                'status': 'error',
-                'message': 'User already exists. Please log in.',
-            }
-            return make_response(jsonify(response_object))
-
-    @classmethod
-    def get_user(cls, user_id: int) -> Response | Exception:
+    def get_user(cls, user_id: int) -> Response:
         user = User.query.filter_by(user_id=user_id).first()
         if user:
             return user.json()
@@ -99,32 +28,57 @@ class ApiServices:
 
     @classmethod
     def add_record(cls, record_data: dict, user_id: int) -> Response:
-        record = Record.query.filter_by(artist=record_data['artist'], title=record_data['title']).first()
-        if not record:
+
+        # Retrieve user
+
+        user = User.query.filter_by(user_id=user_id).first()
+
+        # Check if record already exists in user's collection
+
+        for record in user.records:
+            if record.artist == record_data['artist'] and record.title == record_data['title']:
+                response_object = {
+                    'status': 'error',
+                    'message': 'Record already exists in user collection.'
+                }
+                return make_response(jsonify(response_object))
+
+        # Check if record already exists in db
+
+        record_from_db = Record.query.filter_by(artist=record_data['artist'], title=record_data['title']).first()
+
+        if record_from_db:
+            try:
+                user.records.append(record_from_db)
+                response_object = {
+                    'status': 'success',
+                    'message': 'Record added to user collection.'
+                }
+            except SQLAlchemyError as e:
+                response_object = {
+                    'status': 'error',
+                    'message': 'Unable to add record.',
+                }
+            return make_response(jsonify(response_object))
+
+        # If not, create new record in db and append it to user's collection
+
+        else:
             new_record = Record(record_data['ref'], record_data['title'], record_data['artist'], record_data['genre'],
                                 float(record_data['price']), record_data['release_year'])
-
-            user = User.query.filter_by(user_id=user_id).first()
-            if user:
-                try:
-                    user.records.append(new_record)
-                    db.session.add(new_record)
-                    db.session.commit()
-                    response_object = {
-                        'status': 'success',
-                        'message': 'Record added successfully.'
-                    }
-                except SQLAlchemyError as e:
-                    response_object = {
-                        'status': 'error',
-                        'message': 'Unable to retrieve user.',
-                    }
-                return make_response(jsonify(response_object))
-        else:
-            response_object = {
-                'status': 'error',
-                'message': 'Record already exists.',
-            }
+            try:
+                user.records.append(new_record)
+                db.session.add(new_record)
+                db.session.commit()
+                response_object = {
+                    'status': 'success',
+                    'message': 'Record added successfully.'
+                }
+            except SQLAlchemyError as e:
+                response_object = {
+                    'status': 'error',
+                    'message': 'Unable to retrieve user.',
+                }
             return make_response(jsonify(response_object))
 
     @classmethod

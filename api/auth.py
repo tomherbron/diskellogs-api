@@ -4,6 +4,7 @@ from flask_login import login_user
 from marshmallow import fields, validate
 from webargs.flaskparser import use_args
 
+from api.auth_services import AuthServices
 from api.services import ApiServices
 
 auth = Blueprint('auth', __name__)
@@ -15,7 +16,7 @@ auth = Blueprint('auth', __name__)
     'password': fields.Str(required=True, validate=validate.Length(min=8)),
 })
 def login(credentials: dict) -> Response:
-    return ApiServices.login_user(credentials)
+    return AuthServices.login_user(credentials)
 
 
 def logout():
@@ -31,4 +32,4 @@ def logout():
     'password2': fields.Str(required=True, validate=validate.Length(min=8)),
 })
 def register(user_data: dict) -> Response:
-    return ApiServices.create_user(user_data)
+    return AuthServices.create_user(user_data)

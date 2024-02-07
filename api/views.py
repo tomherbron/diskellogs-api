@@ -9,7 +9,7 @@ from api.services import ApiServices
 views = Blueprint('views', __name__)
 
 
-@views.route('/home', methods=['GET', 'POST'])
+@views.route('/user', methods=['GET', 'POST'])
 @token_required
 def home() -> Response:
     auth_token = request.headers.get('Authorization')
@@ -48,8 +48,6 @@ def add_record(record_data: dict) -> Response:
         'message': 'Invalid auth token.'
     }
     return make_response(jsonify(response_object))
-
-
 
 
 
